@@ -1,3 +1,4 @@
+const size = 784;
 const styles = {
   canvas: {
     border: '1px solid #333',
@@ -7,12 +8,6 @@ const styles = {
     padding: '10px',
     margin: 'auto',
     width: '800px'
-  },
-  button: {
-    border: '0px',
-    margin: '1px',
-    height: '50px',
-    minWidth: '75px'
   },
   colorSwatches: {
     red: {
@@ -63,6 +58,38 @@ class DrawApp extends React.Component {
     });
   }
 
+  export() {
+    const out = [];
+
+    for (var i = 0; i < 28; i += 1) {
+      out.push(new Array(28));
+    }
+
+    var drawing = this.refs.canvas;
+    var con = drawing.getContext("2d");
+    var imgData = con.getImageData(0, 0, size, size);
+
+    for (var row = 0; row < size; row++) {
+      for (var col = 0; col < size; col++) {
+        var row_bucket = Math.floor(row / 28);
+        var col_bucket = Math.floor(col / 28);
+        out[row_bucket][col_bucket] = out[row_bucket][col_bucket] || 0; //find current pixel
+
+        var index = (col + row * imgData.width) * 4; //separate into color values
+
+        var r = imgData.data[index];
+        var g = imgData.data[index + 1];
+        var b = imgData.data[index + 2];
+
+        if (r < 255 || g < 255 || b < 255) {
+          out[row_bucket][col_bucket] = 1;
+        }
+      }
+    }
+
+    return out;
+  }
+
   drawing(e) {
     //if the pen is down in the canvas, draw/erase
     if (this.state.pen === 'down') {
@@ -100,22 +127,12 @@ class DrawApp extends React.Component {
 
   penUp() {
     //mouse is up on the canvas
+    if (this.props.onPenUp) {
+      this.props.onPenUp(this.export());
+    }
+
     this.setState({
       pen: 'up'
-    });
-  }
-
-  penSizeUp() {
-    //increase pen size button clicked
-    this.setState({
-      lineWidth: this.state.lineWidth += 5
-    });
-  }
-
-  penSizeDown() {
-    //decrease pen size button clicked
-    this.setState({
-      lineWidth: this.state.lineWidth -= 5
     });
   }
 
@@ -131,22 +148,22 @@ class DrawApp extends React.Component {
     this.setState({
       mode: 'draw',
       pen: 'up',
-      lineWidth: 10,
+      lineWidth: 30,
       penColor: 'black'
     });
     this.ctx = this.refs.canvas.getContext('2d');
     this.ctx.fillStyle = "white";
-    this.ctx.fillRect(0, 0, 800, 600);
-    this.ctx.lineWidth = 10;
+    this.ctx.fillRect(0, 0, size, size);
+    this.ctx.lineWidth = 30;
   }
 
   render() {
     return React.createElement("div", {
       style: styles.maindiv
-    }, React.createElement("h3", null, "Super Simple React Drawing Component"), React.createElement("canvas", {
+    }, React.createElement("h3", null, "Draw a letter"), React.createElement("canvas", {
       ref: "canvas",
-      width: "800px",
-      height: "600px",
+      width: size,
+      height: size,
       style: styles.canvas,
       onMouseMove: e => this.drawing(e),
       onMouseDown: e => this.penDown(e),
@@ -158,12 +175,6 @@ class DrawApp extends React.Component {
       onClick: e => this.erase(e),
       style: (styles.btn, styles.button)
     }, "Erase"), React.createElement("button", {
-      onClick: e => this.penSizeUp(),
-      style: (styles.btn, styles.button)
-    }, "Pen Size +"), React.createElement("button", {
-      onClick: e => this.penSizeDown(),
-      style: (styles.btn, styles.button)
-    }, "Pen Size -"), React.createElement("button", {
       onClick: () => this.reset(),
       style: (styles.btn, styles.button)
     }, "Reset")));
