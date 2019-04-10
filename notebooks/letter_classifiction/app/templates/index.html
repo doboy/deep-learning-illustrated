@@ -1,15 +1,12 @@
 <div id="da"></div>
 <script crossorigin src="/static/react.development.js"></script>
 <script crossorigin src="/static/react-dom.development.js"></script>
+<script crossorigin src="/static/jquery.min.js"></script>
 <script src="/static/da.js"></script>
 <script>
-function request(exported) {
-  console.log('requesting', exported)
-}
 
-ReactDOM.render(React.createElement(DrawApp, {
-  onPenUp: function(exported) {
-    request(exported);
-  }
-}), document.getElementById('da'))
+
+var drawApp = React.createElement(DrawApp);
+
+ReactDOM.render(drawApp, document.getElementById('da'))
 </script>

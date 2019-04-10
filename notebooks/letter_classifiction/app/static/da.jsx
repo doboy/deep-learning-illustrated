@@ -27,6 +27,7 @@ const styles = {
 class DrawApp extends React.Component {
     constructor(props) {
         super(props)
+        this.state = {};
     }
 
     componentDidMount() {
@@ -112,14 +113,46 @@ class DrawApp extends React.Component {
     }
 
     penUp() { //mouse is up on the canvas
-        if (this.props.onPenUp) {
-          this.props.onPenUp(this.export());
-        }
-
         this.setState({
             pen:'up'
-        })
+        });
+        this.request();
     }
+
+    request() {
+      var that = this;
+
+      var exported = this.export();
+      if (window.xhr) {
+        window.xhr.abort();
+      }
+
+      this.setState({data: null});
+
+      var newData = [];
+      for (var i = 0; i < exported.length; i++) {
+        var row = [];
+        for (var j = 0; j < exported.length; j++) {
+          row.push([exported[i][j]]);
+        }
+        newData.push(row);
+      };
+
+      window.xhr = $.ajax({
+        url: '/predict',
+        type: 'POST',
+        data: JSON.stringify(newData),
+        datatype : "json",
+        contentType: "application/json",
+        success: function(res) {
+          that.setState({data: JSON.parse(res)})
+        },
+        error: function(res) {
+          that.setState({data: "<error unable to predict>"})
+        }
+      });
+    }
+
 
     setColor(c){ //a color button was clicked
         this.setState({
@@ -144,7 +177,7 @@ class DrawApp extends React.Component {
     render() {
         return (
             <div style={styles.maindiv}>
-                <h3>Draw a letter</h3>
+                <h3>Draw a letter. {this.state.data && `Is your guess ${this.state.data}?`}</h3>
                 <canvas ref="canvas" width={size} height={size} style={styles.canvas}
                     onMouseMove={(e)=>this.drawing(e)}
                     onMouseDown={(e)=>this.penDown(e)}

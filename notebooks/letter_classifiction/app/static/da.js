@@ -38,6 +38,7 @@ const styles = {
 class DrawApp extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {};
   }
 
   componentDidMount() {
@@ -127,12 +128,52 @@ class DrawApp extends React.Component {
 
   penUp() {
     //mouse is up on the canvas
-    if (this.props.onPenUp) {
-      this.props.onPenUp(this.export());
+    this.setState({
+      pen: 'up'
+    });
+    this.request();
+  }
+
+  request() {
+    var that = this;
+    var exported = this.export();
+
+    if (window.xhr) {
+      window.xhr.abort();
     }
 
     this.setState({
-      pen: 'up'
+      data: null
+    });
+    var newData = [];
+
+    for (var i = 0; i < exported.length; i++) {
+      var row = [];
+
+      for (var j = 0; j < exported.length; j++) {
+        row.push([exported[i][j]]);
+      }
+
+      newData.push(row);
+    }
+
+    ;
+    window.xhr = $.ajax({
+      url: '/predict',
+      type: 'POST',
+      data: JSON.stringify(newData),
+      datatype: "json",
+      contentType: "application/json",
+      success: function (res) {
+        that.setState({
+          data: JSON.parse(res)
+        });
+      },
+      error: function (res) {
+        that.setState({
+          data: "<error unable to predict>"
+        });
+      }
     });
   }
 
@@ -160,7 +201,7 @@ class DrawApp extends React.Component {
   render() {
     return React.createElement("div", {
       style: styles.maindiv
-    }, React.createElement("h3", null, "Draw a letter"), React.createElement("canvas", {
+    }, React.createElement("h3", null, "Draw a letter. ", this.state.data && `Is your guess ${this.state.data}?`), React.createElement("canvas", {
       ref: "canvas",
       width: size,
       height: size,
